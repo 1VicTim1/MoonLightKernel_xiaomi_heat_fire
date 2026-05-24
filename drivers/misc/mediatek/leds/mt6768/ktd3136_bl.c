@@ -34,6 +34,8 @@ int ktd_hbm_mode;
 
 #define LCD_NAME_1 "dsi_panel_m19a_36_02_0a_dsc_vdo_lcm_drv"
 #define LCD_NAME_2 "dsi_panel_m19a_42_03_0b_dsc_vdo_lcm_drv"
+#define LCD_NAME_3 "dsi_panel_m19a_42_03_0c_dsc_vdo_lcm_drv"
+#define LCD_NAME_4 "dsi_panel_m19a_42_03_0d_dsc_vdo_lcm_drv"
 #define WT_TRUE 1
 #define WT_FALSE 0
 
@@ -880,6 +882,52 @@ int ktd_hbm_set(enum backlight_hbm_mode hbm_mode)
 		}
 	} else if (strnstr(saved_command_line, LCD_NAME_2, strlen(saved_command_line)) != NULL) { //二供
 		LOG_DBG("[bkl] %s hbm set for %s\n", __func__, LCD_NAME_2);
+		switch (hbm_mode) {
+			case HBM_MODE_DEFAULT:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0x99);//20.2mA
+				LOG_DBG("This is hbm mode 0\n");
+			break;
+			case HBM_MODE_LEVEL1:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0xA9);//21.8mA
+				LOG_DBG("This is hbm mode 1\n");
+			break;
+			case HBM_MODE_LEVEL2:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0xC1);//24.2mA
+				LOG_DBG("This is hbm mode 2\n");
+			break;
+			case HBM_MODE_LEVEL3:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0xD9);//26.6mA
+				LOG_DBG("This is hbm mode 3\n");
+			break;
+			default:
+				LOG_DBG("This isn't hbm mode\n");
+			break;
+		}
+	} else if (strnstr(saved_command_line, LCD_NAME_3, strlen(saved_command_line)) != NULL) { //二供
+		LOG_DBG("[bkl] %s hbm set for %s\n", __func__, LCD_NAME_3);
+		switch (hbm_mode) {
+			case HBM_MODE_DEFAULT:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0x99);//20.2mA
+				LOG_DBG("This is hbm mode 0\n");
+			break;
+			case HBM_MODE_LEVEL1:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0xA9);//21.8mA
+				LOG_DBG("This is hbm mode 1\n");
+			break;
+			case HBM_MODE_LEVEL2:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0xC1);//24.2mA
+				LOG_DBG("This is hbm mode 2\n");
+			break;
+			case HBM_MODE_LEVEL3:
+				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0xD9);//26.6mA
+				LOG_DBG("This is hbm mode 3\n");
+			break;
+			default:
+				LOG_DBG("This isn't hbm mode\n");
+			break;
+		}
+	} else if (strnstr(saved_command_line, LCD_NAME_4, strlen(saved_command_line)) != NULL) { //二供
+		LOG_DBG("[bkl] %s hbm set for %s\n", __func__, LCD_NAME_4);
 		switch (hbm_mode) {
 			case HBM_MODE_DEFAULT:
 				ktd3137_write_reg(bkl_chip->client, REG_MODE, 0x99);//20.2mA

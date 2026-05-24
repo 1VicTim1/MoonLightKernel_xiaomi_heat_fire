@@ -35,6 +35,8 @@
 #define MAX_LEVEL_8_BIT (255)
 #define LCD_NAME_1 "dsi_panel_m19a_36_02_0a_dsc_vdo_lcm_drv"
 #define LCD_NAME_2 "dsi_panel_m19a_42_03_0b_dsc_vdo_lcm_drv"
+#define LCD_NAME_3 "dsi_panel_m19a_42_03_0c_dsc_vdo_lcm_drv"
+#define LCD_NAME_4 "dsi_panel_m19a_42_03_0d_dsc_vdo_lcm_drv"
 
 static int lcd_id = 2; /* 2 is default num */
 static struct ti_lmu_bl_chip *bl_chip;
@@ -339,6 +341,52 @@ int ti_hbm_set(enum backlight_hbm_mode hbm_mode)
 		}
 	} else if (strnstr(saved_command_line, LCD_NAME_2, strlen(saved_command_line)) != NULL) { //二供
 		pr_err("[bkl] %s hbm set for %s\n", __func__, LCD_NAME_2);
+		switch (hbm_mode) {
+		case HBM_MODE_DEFAULT:
+			regmap_write(regmap, 0x18, 0x13);//20.2mA
+			pr_err("This is hbm mode 0\n");
+			break;
+		case HBM_MODE_LEVEL1:
+			regmap_write(regmap, 0x18, 0x15);//21.8mA
+			pr_err("This is hbm mode 1\n");
+			break;
+		case HBM_MODE_LEVEL2:
+			regmap_write(regmap, 0x18, 0x18);//24.2mA
+			pr_err("This is hbm mode 2\n");
+			break;
+		case HBM_MODE_LEVEL3:
+			regmap_write(regmap, 0x18, 0x1b);//26.6mA
+			pr_err("This is hbm mode 3\n");
+			break;
+		default:
+			pr_err("This isn't hbm mode\n");
+			break;
+		}
+	} else if (strnstr(saved_command_line, LCD_NAME_3, strlen(saved_command_line)) != NULL) { //二供
+		pr_err("[bkl] %s hbm set for %s\n", __func__, LCD_NAME_3);
+		switch (hbm_mode) {
+		case HBM_MODE_DEFAULT:
+			regmap_write(regmap, 0x18, 0x13);//20.2mA
+			pr_err("This is hbm mode 0\n");
+			break;
+		case HBM_MODE_LEVEL1:
+			regmap_write(regmap, 0x18, 0x15);//21.8mA
+			pr_err("This is hbm mode 1\n");
+			break;
+		case HBM_MODE_LEVEL2:
+			regmap_write(regmap, 0x18, 0x18);//24.2mA
+			pr_err("This is hbm mode 2\n");
+			break;
+		case HBM_MODE_LEVEL3:
+			regmap_write(regmap, 0x18, 0x1b);//26.6mA
+			pr_err("This is hbm mode 3\n");
+			break;
+		default:
+			pr_err("This isn't hbm mode\n");
+			break;
+		}
+	} else if (strnstr(saved_command_line, LCD_NAME_4, strlen(saved_command_line)) != NULL) { //二供
+		pr_err("[bkl] %s hbm set for %s\n", __func__, LCD_NAME_4);
 		switch (hbm_mode) {
 		case HBM_MODE_DEFAULT:
 			regmap_write(regmap, 0x18, 0x13);//20.2mA
