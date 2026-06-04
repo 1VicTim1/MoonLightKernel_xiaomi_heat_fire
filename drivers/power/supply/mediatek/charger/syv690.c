@@ -2482,8 +2482,10 @@ static void do_hvdcp_det_work(struct work_struct *work)
 		}
 	} else {
 		det_cnt++;
-		if (det_cnt == 20)
+		if (det_cnt == 20) {
+			SYV690_handle_hvdcp(g_chg_info, true);
 			SYV690_enable_force_dpdm(g_chg_info, true);
+		}
 		if (det_cnt > HVDCP_DETECT_COUNT || (false == SYV690_field_read(g_chg_info, F_VBUS_GD))) {
 			pr_info("not attach hvdcp, vbus_good:%d\n", SYV690_field_read(g_chg_info, F_VBUS_GD));
 			det_cnt = 0;

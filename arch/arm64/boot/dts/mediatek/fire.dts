@@ -253,9 +253,10 @@
 		charger_name = "primary_chg";
 		silergy,syv690,current-sensor-mohm = <55>;
 		silergy,syv690,usb-vreg = <4450>;
-		silergy,syv690,usb-ichg = <1550>;
-		silergy,syv690,usb-ilim = <1500>;
+		silergy,syv690,usb-ichg = <2300>;
+		silergy,syv690,usb-ilim = <2000>;
 		silergy,syv690,usb-vlim = <4600>;   /*vindpm threshold*/
+		silergy,syv690,charge-detect-enable;
 		silergy,syv690,vbatlow-volt = <3500>;
 		silergy,syv690,termination-current = <256>;
 		silergy,syv690,safety-max-charge-current = <3000>;
