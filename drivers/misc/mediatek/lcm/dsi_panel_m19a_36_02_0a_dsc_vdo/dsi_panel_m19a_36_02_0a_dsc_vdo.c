@@ -142,6 +142,18 @@ static struct LCM_setting_table lcm_suspend_proximity_setting[] = {
 	{0x28, 0, {} }
 };
 
+static struct LCM_setting_table lcm_aod_enter_setting[] = {
+	{0x53, 1, {0x24} },
+	{0x39, 0, {} },
+	{REGFLAG_DELAY, 20, {} }
+};
+
+static struct LCM_setting_table lcm_aod_exit_setting[] = {
+	{0x38, 0, {} },
+	{0x53, 1, {0x2C} },
+	{REGFLAG_DELAY, 20, {} }
+};
+
 static struct LCM_setting_table init_setting_vdo[] = {
 	{0XFF, 1, {0X20}},
 	{0XFB, 1, {0X01}},
@@ -659,6 +671,18 @@ static void lcm_resume(void)
 	lcm_init();
 }
 
+static void lcm_aod(int enter)
+{
+	LCM_LOGI("[nt36672c] %s enter=%d\n", __func__, enter);
+
+	if (enter)
+		push_table(NULL, lcm_aod_enter_setting,
+			ARRAY_SIZE(lcm_aod_enter_setting), 1);
+	else
+		push_table(NULL, lcm_aod_exit_setting,
+			ARRAY_SIZE(lcm_aod_exit_setting), 1);
+}
+
 static unsigned int lcm_ata_check(unsigned char *buffer)
 {
 #ifndef BUILD_LK
@@ -809,5 +833,5 @@ struct LCM_DRIVER dsi_panel_m19a_36_02_0a_dsc_vdo_lcm_drv = {
 	.ata_check = lcm_ata_check,
 	.update = lcm_update,
 	.esd_recover = lcd_esd_recover,
+	.aod = lcm_aod,
 };
-
