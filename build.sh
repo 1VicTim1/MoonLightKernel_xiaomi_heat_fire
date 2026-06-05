@@ -450,9 +450,7 @@ PREBUILT_KERNEL_OUT="${PREBUILT_KERNEL_OUT:-$DIST_DIR/kernel}"
 PREBUILT_DTB_OUT="${PREBUILT_DTB_OUT:-$DIST_DIR/mtk_dtb}"
 PREBUILT_DTBO_OUT="${PREBUILT_DTBO_OUT:-$DIST_DIR/dtbo.img}"
 BUILD_NAME="${BUILD_NAME:-$(basename "$ROOT_DIR")}"
-CCACHE_DIR="${CCACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/ccache/moonlight_kernel}"
-CCACHE_MAXSIZE="${CCACHE_MAXSIZE:-30G}"
-CCACHE_MAXFILES="${CCACHE_MAXFILES:-0}"
+CCACHE_DIR="${CCACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/ccache/inferno-kernel}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/osm0sis/AnyKernel3.git}"
 ANYKERNEL_COMMIT="${ANYKERNEL_COMMIT:-dca9dc370838d919d56c1f59ec78b27a14a72c68}"
 ANYKERNEL_CACHE="${ANYKERNEL_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/AnyKernel3}"
@@ -798,7 +796,7 @@ if ((USE_CCACHE)); then
 	export CCACHE_DIR
 	export CCACHE_CPP2=yes
 	mkdir -p "$CCACHE_DIR"
-	ccache --max-size="$CCACHE_MAXSIZE" --max-files="$CCACHE_MAXFILES" >/dev/null
+	ccache --max-size="${CCACHE_MAXSIZE:-10G}" >/dev/null
 	compiler="ccache clang"
 fi
 
