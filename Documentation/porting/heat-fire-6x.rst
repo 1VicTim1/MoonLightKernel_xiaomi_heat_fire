@@ -129,3 +129,24 @@ Current checkpoint against ``android15-6.6``:
   6.6 does not contain the MTK vendor Kconfig/driver stack.
 * ``mediatek/heat.dtbo`` is not part of the passing checkpoint yet; the archived
   heat DTS includes ``<heat/cust.dtsi>``, which is not present in this tree.
+
+Materialized 6.6 Workspace
+--------------------------
+
+Use this when moving from diagnostics into actual porting work:
+
+::
+
+    scripts/porting/materialize-android15-6.6-port.sh
+
+It creates ``out/porting-6.6/android15-6.6-port-tree`` from the Android common
+6.6 base, copies the portable heat/fire inputs, applies the temporary DTB/DTBO
+integration used by the checker, generates ``olddefconfig``, and builds
+``mediatek/mt6768.dtb`` plus ``mediatek/fire.dtbo``.  This generated worktree
+is the place to start importing MTK vendor Kconfig and driver directories
+without disturbing the 4.19 source branch.
+
+The next source porting target is the missing MTK vendor stack represented by
+the dropped fire config symbols.  Start with the lowest boot-critical layers:
+``CONFIG_MACH_MT6768``, pinctrl/GPIO, PMIC/charger, MMC/storage, USB/Type-C,
+and display/backlight.
