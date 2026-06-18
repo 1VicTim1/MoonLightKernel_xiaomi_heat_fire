@@ -171,3 +171,33 @@ Current dropped-symbol ownership snapshot:
   ``drivers/misc/mediatek/typec/tcpc``, ``drivers/misc/mediatek/video``,
   ``drivers/misc/mediatek/lcm``, ``drivers/misc/mediatek/leds`` and
   ``drivers/power/supply/mediatek``.
+
+ADB Reference Device
+--------------------
+
+The connected ``fire`` phone is useful as a working 4.19 reference.  It is not
+currently booted into official 6.6 sources:
+
+* Active slot is ``_b``.
+* Live kernel is ``4.19.325-cip132-st16-MoonLightKernel+``.
+* Live DT root reports ``model = "MT6769H"`` and
+  ``compatible = "mediatek,MT6768"``.
+* Dumped ``boot_a`` and ``boot_b`` both contain
+  ``4.19.325-cip132-st16-MoonLightKernel+`` strings, so neither slot currently
+  gives us an official 6.6 kernel image.
+* Embedded boot DTB is identical between ``boot_a`` and ``boot_b``.
+* ``vendor_boot_a`` and ``vendor_boot_b`` are identical.
+* ``dtbo_a`` and ``dtbo_b`` differ; active ``dtbo_b`` uses ``novatek@0`` for
+  the touch overlay and has the same ``mediatek,md-eint`` SIM hotplug binding as
+  the current source tree.
+
+To refresh a read-only reference dump from an attached rooted phone:
+
+::
+
+    scripts/porting/dump-fire-adb-artifacts.sh
+    DUMP_IMAGES=1 scripts/porting/dump-fire-adb-artifacts.sh
+
+The default mode collects properties, kernel config, command line and live
+device tree.  ``DUMP_IMAGES=1`` additionally reads ``boot_*``, ``vendor_boot_*``
+and ``dtbo_*`` partitions into ``out/device-dumps``.
