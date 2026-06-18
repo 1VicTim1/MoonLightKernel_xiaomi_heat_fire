@@ -94,7 +94,7 @@
 		status = "okay";
 	};
 
-	camera_main_af_mtk:camera_main_af@0c {
+	camera_main_af_mtk:camera_main_af@c {
 		compatible = "mediatek,camera_main_af";
 		reg = <0x0c>;
 		status = "okay";
@@ -547,4 +547,3 @@
 	mediatek,kpd-hw-factory-key = <17>;
 	status = "okay";
 };
-
