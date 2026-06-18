@@ -104,6 +104,14 @@ page_owner=on loop.max_part=7";
 			opp-hz = /bits/ 64 <1700000000>;
 			opp-microvolt = <962500>;
 		};
+		opp16 {
+			opp-hz = /bits/ 64 <1800000000>;
+			opp-microvolt = <987500>;
+		};
+		opp17 {
+			opp-hz = /bits/ 64 <1900000000>;
+			opp-microvolt = <1012500>;
+		};
 	};
 
 	cluster1_opp: opp_table1 {
@@ -172,6 +180,14 @@ page_owner=on loop.max_part=7";
 		opp15 {
 			opp-hz = /bits/ 64 <2000000000>;
 			opp-microvolt = <1087500>;
+		};
+		opp16 {
+			opp-hz = /bits/ 64 <2050000000>;
+			opp-microvolt = <1100000>;
+		};
+		opp17 {
+			opp-hz = /bits/ 64 <2100000000>;
+			opp-microvolt = <1112500>;
 		};
 	};
 
@@ -2333,7 +2349,7 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 		compatible = "mediatek,eem_fsm";
 		reg = <0 0x1100b000 0 0x1000>;
 		interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_LOW>;
-		eem-status = <1>;
+		eem-status = <0>;
 		eem-initmon-little = <0xf>;
 		eem-initmon-big = <0xf>;
 		eem-initmon-cci = <0xf>;
