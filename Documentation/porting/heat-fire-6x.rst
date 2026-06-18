@@ -150,3 +150,24 @@ The next source porting target is the missing MTK vendor stack represented by
 the dropped fire config symbols.  Start with the lowest boot-critical layers:
 ``CONFIG_MACH_MT6768``, pinctrl/GPIO, PMIC/charger, MMC/storage, USB/Type-C,
 and display/backlight.
+
+To map dropped symbols back to the current 4.19 Kconfig owners, run:
+
+::
+
+    scripts/porting/map-dropped-symbol-owners.sh
+
+The report is written to
+``out/porting-6.6/android15-6.6-port-report/dropped-symbol-owners.tsv``.
+
+Current dropped-symbol ownership snapshot:
+
+* 168 entries are owned by ``drivers/misc/mediatek``.
+* 7 entries are owned by ``kernel/sched/extension``.
+* 6 entries are owned by ``drivers/power/supply``.
+* 4 entries are owned by ``arch/arm64/Kconfig``.
+* The most important first owner groups are ``drivers/misc/mediatek/pmic``,
+  ``drivers/misc/mediatek/pmic/mt6370``, ``drivers/misc/mediatek/usb20``,
+  ``drivers/misc/mediatek/typec/tcpc``, ``drivers/misc/mediatek/video``,
+  ``drivers/misc/mediatek/lcm``, ``drivers/misc/mediatek/leds`` and
+  ``drivers/power/supply/mediatek``.
