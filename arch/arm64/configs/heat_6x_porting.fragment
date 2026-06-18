@@ -1,0 +1,23 @@
+# MoonLightKernel Xiaomi Redmi 12 heat 6.x porting delta.
+#
+# heat_defconfig is archived in this tree.  For a 6.x bring-up, merge
+# fire_6x_porting.fragment first and then apply this fragment only when the
+# target firmware/device tree is the heat variant.
+
+CONFIG_ARCH_MTK_PROJECT="heat"
+CONFIG_BUILD_ARM64_DTB_OVERLAY_IMAGE_NAMES="mediatek/heat"
+CONFIG_LCM_HEIGHT="2160"
+# CONFIG_LCM_WIDTH is intentionally not set in the archived 4.19 heat config.
+CONFIG_CUSTOM_KERNEL_LCM="hx83112b_fhdp_dsi_cmd_auo_rt5081 otm1911a_fhdp_dsi_vdo_truly_rt5081"
+CONFIG_MTK_SCHED_TRACERS=y
+CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+CONFIG_MT6370_PMU_CHARGER=y
+# CONFIG_CHARGER_SYV690 is not set
+CONFIG_TCPC_MT6370=y
+# CONFIG_TCPC_WUSB3801 is not set
+# CONFIG_TCPC_HUSB320 is not set
+# CONFIG_TCPC_RT1711H is not set
+CONFIG_CUSTOM_KERNEL_BAROMETER=y
+CONFIG_MTK_BAROHUB=y
+CONFIG_CUSTOM_KERNEL_UNCALI_GYRO_SENSOR=y
+CONFIG_MTK_UNCALI_GYROHUB=y
