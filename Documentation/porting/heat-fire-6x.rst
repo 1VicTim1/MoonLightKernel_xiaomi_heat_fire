@@ -121,10 +121,8 @@ mirror.
 Current checkpoint against ``android15-6.6``:
 
 * ``fire_6x_porting.fragment`` merges and ``olddefconfig`` completes.
-* ``mediatek/mt6768.dtb`` builds, with legacy DTC unit-address warnings still
-  to clean up.
-* ``mediatek/fire.dtbo`` builds with a DTC warning about
-  ``camera_main_af@0c`` having a leading zero in the unit address.
+* ``mediatek/mt6768.dtb`` builds with no DTC warnings.
+* ``mediatek/fire.dtbo`` builds with no DTC warnings.
 * 175 fire config symbols are dropped because Android common
   6.6 does not contain the MTK vendor Kconfig/driver stack.
 * ``mediatek/heat.dtbo`` is not part of the passing checkpoint yet; the archived
@@ -145,6 +143,26 @@ integration used by the checker, generates ``olddefconfig``, and builds
 ``mediatek/mt6768.dtb`` plus ``mediatek/fire.dtbo``.  This generated worktree
 is the place to start importing MTK vendor Kconfig and driver directories
 without disturbing the 4.19 source branch.
+
+The materializer also copies the root ``build.sh`` into the generated 6.6
+worktree and writes ``arch/arm64/configs/fire_6x_defconfig`` from the merged
+configuration.  A focused fire smoke build can then be run with:
+
+::
+
+    TOOLCHAIN_DIR=$HOME/.cache/android-kernel-toolchains/clang-r530567 \
+    OUT_DIR=$PWD/out/porting-6.6/config-fire-port \
+    BUILD_TARGETS='Image mediatek/mt6768.dtb mediatek/fire.dtbo' \
+    out/porting-6.6/android15-6.6-port-tree/build.sh fire_6x --manual --no-ccache
+
+``BUILD_TARGETS`` is intentionally narrower than a full arm64 build so Android
+common does not try to compile unrelated vendor DTBs while the fire port is
+still being staged.  The current smoke checkpoint produces:
+
+* ``out/porting-6.6/config-fire-port/arch/arm64/boot/Image``
+* ``out/porting-6.6/config-fire-port/arch/arm64/boot/dts/mediatek/mt6768.dtb``
+* ``out/porting-6.6/config-fire-port/arch/arm64/boot/dts/mediatek/fire.dtbo``
+* ``out/porting-6.6/config-fire-port/arch/arm64/boot/dtbo.img``
 
 The next source porting target is the missing MTK vendor stack represented by
 the dropped fire config symbols.  Start with the lowest boot-critical layers:

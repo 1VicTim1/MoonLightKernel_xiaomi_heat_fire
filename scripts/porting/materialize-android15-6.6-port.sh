@@ -29,6 +29,9 @@ while IFS= read -r path; do
 	cp "$root/$path" "$worktree/$path"
 done <"$inputs_out/required-files.list"
 
+cp "$root/build.sh" "$worktree/build.sh"
+chmod +x "$worktree/build.sh"
+
 mediatek_makefile="$worktree/arch/arm64/boot/dts/mediatek/Makefile"
 grep -q '^dtb-$(CONFIG_ARCH_MEDIATEK) += mt6768.dtb$' "$mediatek_makefile" ||
 	printf 'dtb-$(CONFIG_ARCH_MEDIATEK) += mt6768.dtb\n' >>"$mediatek_makefile"
@@ -47,7 +50,9 @@ mkdir -p "$config_out" "$report_out"
 		arch/arm64/configs/gki_defconfig \
 		arch/arm64/configs/fire_6x_porting.fragment
 	make O="$config_out" ARCH=arm64 olddefconfig
+	make O="$config_out" ARCH=arm64 savedefconfig
 ) >"$report_out/olddefconfig.log" 2>&1
+cp "$config_out/defconfig" "$worktree/arch/arm64/configs/fire_6x_defconfig"
 
 mkdir -p "$worktree/scripts/dtc/include-prefixes/generated"
 ln -sf "$config_out/include/generated/autoconf.h" \
@@ -73,6 +78,8 @@ done <"$inputs_out/fire-config-symbols.list" >"$report_out/dropped-fire-symbols.
 	printf 'base commit: %s\n' "$(git -C "$root" rev-parse --short=12 "$ref")"
 	printf 'worktree: %s\n' "$worktree"
 	printf 'config out: %s\n' "$config_out"
+	printf 'build script: %s\n' "$worktree/build.sh"
+	printf 'build defconfig: %s\n' "$worktree/arch/arm64/configs/fire_6x_defconfig"
 	printf 'required files: %s\n' "$(wc -l <"$inputs_out/required-files.list")"
 	printf 'dropped fire symbols: %s\n' "$(wc -l <"$report_out/dropped-fire-symbols.list")"
 	printf 'dtb warnings: %s\n' "$(grep -c 'Warning' "$report_out/dtb.log" || true)"

@@ -33,6 +33,10 @@ CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK=y
 CONFIG_ZRAM=y
 CONFIG_ZRAM_WRITEBACK=y
 
+# Keep the first generated 6.6 device baseline quiet and independent from host
+# pahole/BTF quirks. Re-enable once vendor module ABI validation needs it.
+# CONFIG_DEBUG_INFO_BTF is not set
+
 # Legacy Android/MTK compatibility.  On 6.x these may need replacement with
 # upstream Android common equivalents before the build can link.
 CONFIG_ANDROID_DEFAULT_SETTING=y

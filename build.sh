@@ -822,13 +822,22 @@ MAKE_ARGS=(
 	STRIP=llvm-strip
 	CROSS_COMPILE=aarch64-linux-gnu-
 )
+MAKE_TARGETS=()
+if [[ -n "${BUILD_TARGETS:-}" ]]; then
+	read -r -a MAKE_TARGETS <<<"$BUILD_TARGETS"
+fi
 
 printf 'Building %s with %s (%s jobs, ccache %s)...\n' \
 	"$DEFCONFIG" "$("$TOOLCHAIN_DIR/bin/clang" --version | head -1)" "$JOBS" \
 	"$([[ "$USE_CCACHE" == 1 ]] && printf enabled || printf disabled)"
 make "${MAKE_ARGS[@]}" "$DEFCONFIG"
 make "${MAKE_ARGS[@]}" olddefconfig
-make -j"$JOBS" "${MAKE_ARGS[@]}"
+if ((${#MAKE_TARGETS[@]})); then
+	printf 'Build targets: %s\n' "${MAKE_TARGETS[*]}"
+	make -j"$JOBS" "${MAKE_ARGS[@]}" "${MAKE_TARGETS[@]}"
+else
+	make -j"$JOBS" "${MAKE_ARGS[@]}"
+fi
 build_dtbo_image
 
 if ((PREBUILT)); then
@@ -838,4 +847,6 @@ elif ((ANYKERNEL_ZIP || !MANUAL)); then
 	prepare_anykernel
 fi
 
-((USE_CCACHE)) && ccache --show-stats
+if ((USE_CCACHE)); then
+	ccache --show-stats
+fi
