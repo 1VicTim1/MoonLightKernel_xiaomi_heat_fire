@@ -14,6 +14,7 @@ AUTO=0
 CHECK=0
 FETCH_CLANG=0
 USE_CCACHE=1
+AK3_INCLUDE_DTBO="${AK3_INCLUDE_DTBO:-1}"
 ACTION=
 ZIP_LEVEL=9
 ZIP_LEVEL_SET=0
@@ -50,6 +51,7 @@ usage() {
   -t, --tgz              Упаковать prebuilts в tar.gz (требует --prebuilt)
   --level N              Уровень сжатия ZIP: 0-9 (требует --zip)
   -a, --azip             Создать прошиваемый AnyKernel3 ZIP (несовместим с --prebuilt)
+  --no-ak3-dtbo          Не включать dtbo.img в AnyKernel3 ZIP
 
 Toolchain и зависимости:
   -A, --auto             Установить зависимости и загрузить выбранный clang
@@ -90,6 +92,7 @@ Build outputs:
   -t, --tgz              Pack firmware prebuilts into a tar.gz (requires --prebuilt)
   --level N              ZIP compression level: 0-9 (requires --zip)
   -a, --azip             Create an AnyKernel3 flashable ZIP (conflicts with --prebuilt)
+  --no-ak3-dtbo          Do not include dtbo.img in the AnyKernel3 ZIP
 
 Toolchain and dependencies:
   -A, --auto             Install build dependencies and download the selected clang
@@ -147,7 +150,7 @@ _moonlightkernel_build() {
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	configs="$(./build.sh --list-configs 2>/dev/null)"
-	opts="$configs clean mrproper fclean check configs clang-list clang-installed clang-detect -p -z -t -a -A -m -c -h --prebuilt --zip --tgz --level --azip --auto --check --fetch-clang --cver --list-cver --list-installed-cver --detect-cver --manual --no-ccache --jobs --clean --mrproper --fclean --list-configs --lang=ru --lang=en --autocomplete=bash --autocomplete=zsh --autocomplete=fish --help"
+	opts="$configs clean mrproper fclean check configs clang-list clang-installed clang-detect -p -z -t -a -A -m -c -h --prebuilt --zip --tgz --level --azip --no-ak3-dtbo --auto --check --fetch-clang --cver --list-cver --list-installed-cver --detect-cver --manual --no-ccache --jobs --clean --mrproper --fclean --list-configs --lang=ru --lang=en --autocomplete=bash --autocomplete=zsh --autocomplete=fish --help"
 	case "$prev" in
 		--level) COMPREPLY=( $(compgen -W "0 1 2 3 4 5 6 7 8 9" -- "$cur") ); return ;;
 		--autocomplete) COMPREPLY=( $(compgen -W "bash zsh fish" -- "$cur") ); return ;;
@@ -170,6 +173,7 @@ _arguments \
   '(-t --tgz)'{-t,--tgz}'[упаковать prebuilts в tar.gz]' \
   '--level[уровень сжатия ZIP]:уровень:(0 1 2 3 4 5 6 7 8 9)' \
   '(-a --azip)'{-a,--azip}'[создать AnyKernel3 ZIP]' \
+  '--no-ak3-dtbo[не включать dtbo.img в AnyKernel3 ZIP]' \
   '(-A --auto)'{-A,--auto}'[установить зависимости и clang]' \
   '(-c --check)'{-c,--check}'[проверить зависимости]' \
   '--fetch-clang[загрузить clang]' \
@@ -200,6 +204,7 @@ _arguments \
   '(-t --tgz)'{-t,--tgz}'[pack firmware prebuilts into tar.gz]' \
   '--level[ZIP compression level]:level:(0 1 2 3 4 5 6 7 8 9)' \
   '(-a --azip)'{-a,--azip}'[create AnyKernel3 ZIP]' \
+  '--no-ak3-dtbo[do not include dtbo.img in the AnyKernel3 ZIP]' \
   '(-A --auto)'{-A,--auto}'[install dependencies and clang]' \
   '(-c --check)'{-c,--check}'[check dependencies]' \
   '--fetch-clang[download clang]' \
@@ -230,6 +235,7 @@ complete -c build.sh -s z -l zip -d 'Упаковать prebuilts в ZIP'
 complete -c build.sh -s t -l tgz -d 'Упаковать prebuilts в tar.gz'
 complete -c build.sh -l level -xa '0 1 2 3 4 5 6 7 8 9' -d 'Уровень сжатия ZIP'
 complete -c build.sh -s a -l azip -d 'Создать AnyKernel3 ZIP'
+complete -c build.sh -l no-ak3-dtbo -d 'Не включать dtbo.img в AnyKernel3 ZIP'
 complete -c build.sh -s A -l auto -d 'Установить зависимости и clang'
 complete -c build.sh -s c -l check -d 'Проверить зависимости'
 complete -c build.sh -l fetch-clang -d 'Загрузить clang'
@@ -257,6 +263,7 @@ complete -c build.sh -s z -l zip -d 'Pack firmware prebuilts into ZIP'
 complete -c build.sh -s t -l tgz -d 'Pack firmware prebuilts into tar.gz'
 complete -c build.sh -l level -xa '0 1 2 3 4 5 6 7 8 9' -d 'ZIP compression level'
 complete -c build.sh -s a -l azip -d 'Create AnyKernel3 ZIP'
+complete -c build.sh -l no-ak3-dtbo -d 'Do not include dtbo.img in the AnyKernel3 ZIP'
 complete -c build.sh -s A -l auto -d 'Install dependencies and clang'
 complete -c build.sh -s c -l check -d 'Check dependencies'
 complete -c build.sh -l fetch-clang -d 'Download clang'
@@ -300,6 +307,9 @@ while (($#)); do
 			;;
 		-a|--azip)
 			ANYKERNEL_ZIP=1
+			;;
+		--no-ak3-dtbo)
+			AK3_INCLUDE_DTBO=0
 			;;
 		--level)
 			need_value "$@"
@@ -417,6 +427,7 @@ while (($#)); do
 done
 
 [[ "$LANG_CODE" == ru || "$LANG_CODE" == en ]] || die "--lang must be ru or en"
+[[ "$AK3_INCLUDE_DTBO" == 0 || "$AK3_INCLUDE_DTBO" == 1 ]] || die "AK3_INCLUDE_DTBO must be 0 or 1"
 JOBS="${JOBS:-$(nproc --all)}"
 [[ "$JOBS" =~ ^[1-9][0-9]*$ ]] || die "jobs must be a positive integer"
 [[ "$ZIP_LEVEL" =~ ^[0-9]$ ]] || die "ZIP compression level must be between 0 and 9"
@@ -703,6 +714,7 @@ prepare_anykernel() {
 
 	image="$OUT_DIR/arch/$ARCH/boot/Image.gz-dtb"
 	[[ -f "$image" ]] || image="$OUT_DIR/arch/$ARCH/boot/Image.gz"
+	[[ -f "$image" ]] || image="$OUT_DIR/arch/$ARCH/boot/Image"
 	[[ -f "$image" ]] || die "kernel image was not produced"
 	require_command git
 	require_command tar
@@ -725,7 +737,7 @@ prepare_anykernel() {
 	rm -rf "$package_dir/.github" "$package_dir/README.md"
 	cp "$image" "$package_dir/$(basename "$image")"
 	[[ -f "$ROOT_DIR/AUTHORS" ]] && cp "$ROOT_DIR/AUTHORS" "$package_dir/AUTHORS"
-	[[ -f "$OUT_DIR/arch/$ARCH/boot/dtbo.img" ]] &&
+	[[ "$AK3_INCLUDE_DTBO" == 1 && -f "$OUT_DIR/arch/$ARCH/boot/dtbo.img" ]] &&
 		cp "$OUT_DIR/arch/$ARCH/boot/dtbo.img" "$package_dir/dtbo.img"
 
 	cat > "$package_dir/anykernel.sh" <<EOF
