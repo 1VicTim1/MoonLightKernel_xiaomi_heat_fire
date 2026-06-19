@@ -123,7 +123,7 @@ Current checkpoint against ``android15-6.6``:
 * ``fire_6x_porting.fragment`` merges and ``olddefconfig`` completes.
 * ``mediatek/mt6768.dtb`` builds with no DTC warnings.
 * ``mediatek/fire.dtbo`` builds with no DTC warnings.
-* 165 fire config symbols are dropped because Android common
+* 151 fire config symbols are dropped because Android common
   6.6 does not contain the MTK vendor Kconfig/driver stack.
 * ``mediatek/heat.dtbo`` is not part of the passing checkpoint yet; the archived
   heat DTS includes ``<heat/cust.dtsi>``, which is not present in this tree.
@@ -132,9 +132,19 @@ Current checkpoint against ``android15-6.6``:
   ``CONFIG_MTK_PMIC_WRAP``, and the first 6.6 fire config enables the upstream
   MT6397/MT6370 MFD, MT6358/MT6370 regulator, MT6370 charger, ADC, Type-C,
   backlight and LED drivers.
+* The legacy MTK USB2/MUSB and old TCPC symbols now use the upstream Android
+  common 6.6 MediaTek USB/Type-C stack where possible:
+  ``CONFIG_USB_MTU3``, ``CONFIG_USB_MTU3_DUAL_ROLE``,
+  ``CONFIG_USB_XHCI_MTK``, ``CONFIG_PHY_MTK_TPHY``,
+  ``CONFIG_TYPEC_RT1711H`` and ``CONFIG_TYPEC_WUSB3801``.  The existing MT6370
+  Type-C path remains covered by ``CONFIG_TYPEC_TCPCI_MT6370``.
+* ``CONFIG_TCPC_HUSB320`` still has no matching Android common 6.6 driver in
+  this base and remains a real vendor Type-C controller gap.
 * ``include/dt-bindings/pinctrl/mt65xx.h`` carries the 6.x
   ``MTK_PULL_SET_RSEL_*`` constants required by upstream MediaTek pinctrl once
   ``CONFIG_ARCH_MEDIATEK`` is enabled.
+* ``include/dt-bindings/phy/phy.h`` carries the 6.6 PHY type IDs required by
+  upstream ``drivers/phy/mediatek/phy-mtk-tphy.c``.
 
 Materialized 6.6 Workspace
 --------------------------
@@ -176,7 +186,8 @@ still being staged.  The current smoke checkpoint produces:
 The smoke build also compiles the upstream 6.6 MTK platform layer, including
 MediaTek pinctrl, PMIC wrapper, CMDQ mailbox, watchdog, MT6370/MT6397 MFD,
 MT6358/MT6370 regulators, MT6370 charger, MT6370 Type-C TCPM, MT6370 ADC,
-MT6370 backlight and MT6370 LED drivers.  The next source porting target is
+MT6370 backlight, MT6370 LED, MTK T-PHY, MTU3 USB DRD, XHCI-MTK,
+RT1711H Type-C and WUSB3801 Type-C drivers.  The next source porting target is
 the missing MTK vendor stack represented by the remaining dropped fire config
 symbols.  Start with the lowest boot-critical layers: ``CONFIG_MACH_MT6768``,
 MMC/storage, the remaining USB/Type-C companion controllers, display/panel and
@@ -193,15 +204,16 @@ The report is written to
 
 Current dropped-symbol ownership snapshot:
 
-* 168 entries are owned by ``drivers/misc/mediatek``.
-* 7 entries are owned by ``kernel/sched/extension``.
-* 6 entries are owned by ``drivers/power/supply``.
-* 4 entries are owned by ``arch/arm64/Kconfig``.
-* The most important first owner groups are ``drivers/misc/mediatek/pmic``,
-  ``drivers/misc/mediatek/pmic/mt6370``, ``drivers/misc/mediatek/usb20``,
-  ``drivers/misc/mediatek/typec/tcpc``, ``drivers/misc/mediatek/video``,
-  ``drivers/misc/mediatek/lcm``, ``drivers/misc/mediatek/leds`` and
-  ``drivers/power/supply/mediatek``.
+* 14 entries map to top-level ``drivers/misc/mediatek`` Kconfig symbols.
+* 12 entries map to ``drivers/misc/mediatek/connectivity``.
+* 9 entries map to ``drivers/misc/mediatek/sensors-1.0/sensorfusion``.
+* 7 entries map to ``kernel/sched/extension``.
+* 7 entries map to ``drivers/misc/mediatek/geniezone``.
+* The most important first owner groups are now ``CONFIG_MACH_MT6768``,
+  ``drivers/power/supply/mediatek/charger``,
+  ``drivers/misc/mediatek/video``, ``drivers/misc/mediatek/lcm``,
+  ``drivers/misc/mediatek/connectivity`` and the remaining
+  ``drivers/misc/mediatek/typec`` companion pieces.
 
 ADB Reference Device
 --------------------
