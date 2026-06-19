@@ -144,10 +144,25 @@ Current checkpoint against ``android15-6.6``:
   ``console-ramoops`` ends with init waiting for missing block-device uevents:
   ``boot_b``, ``md_udc``, ``super``, ``vbmeta_b``, ``vbmeta_system_b`` and
   ``vbmeta_vendor_b``.
-* The storage follow-up enables upstream ``CONFIG_MMC_MTK``/``CONFIG_MMC_CQHCI``
-  and gives the MT6768 eMMC/SD nodes an upstream ``mediatek,mt6779-mmc``
-  fallback compatible so Android common 6.6 can probe them before a full vendor
-  MSDC port is attempted.
+* The storage follow-up enables ``CONFIG_MMC_MTK``/``CONFIG_MMC_CQHCI`` and
+  turns on ``CONFIG_MMC_DEBUG`` because the Android 15 ALPS MSDC host keeps its
+  error ring in the main ``msdc_host`` structure.
+* The first AK3 boot failure was not an early kernel panic.  The kernel reached
+  first-stage init, then init waited for ``boot_b``, ``super`` and ``vbmeta_*``
+  block-device uevents.  The next storage build therefore uses the Android 15
+  MTK device_modules MSDC driver instead of the plain upstream 6.6 fallback.
+* ``scripts/porting/apply-alps-device-modules-slice.sh`` overlays the ALPS MMC
+  slice from Motorola's Android 15 ``kernel_device_modules-6.6`` tree at commit
+  ``3b31307ea54d`` (``[ALPS09075281] kernel: not trim non-used symbols``).
+  This is the last ALPS commit before the upper Motorola product tail in that
+  reference tree.  The overlay copies ``mtk-mmc.c`` as the 6.6 ``mtk-sd.c``,
+  translates ``CONFIG_DEVICE_MODULES_MMC_*`` names to in-tree ``CONFIG_MMC_*``
+  names, and supplies temporary no-op RPMB/blocktag/MMC-debug shims so eMMC
+  probing is not blocked by later vendor service ports.
+* Full Android validation must be done against a matching 6.6/HOS-style vendor
+  stack.  A 4.19-era crDroid/vendor userspace can still be useful for early
+  boot smoke tests, but it cannot prove final 6.6 device compatibility because
+  the blobs and vendor module layout are not the same.
 * ``include/dt-bindings/pinctrl/mt65xx.h`` carries the 6.x
   ``MTK_PULL_SET_RSEL_*`` constants required by upstream MediaTek pinctrl once
   ``CONFIG_ARCH_MEDIATEK`` is enabled.

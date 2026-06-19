@@ -32,6 +32,15 @@ done <"$inputs_out/required-files.list"
 cp "$root/build.sh" "$worktree/build.sh"
 chmod +x "$worktree/build.sh"
 
+device_modules_ref="${MTK_DEVICE_MODULES_REF_TREE:-$root/out/reference-moto-device-modules-6.6}"
+if [[ -d "$device_modules_ref/.git" ]]; then
+	"$root/scripts/porting/apply-alps-device-modules-slice.sh" \
+		"$worktree" "$device_modules_ref" >"$base_out/alps-device-modules-slice.log"
+else
+	printf 'warning: MTK device_modules reference not found, skipping ALPS slice: %s\n' \
+		"$device_modules_ref" >"$base_out/alps-device-modules-slice.log"
+fi
+
 mediatek_makefile="$worktree/arch/arm64/boot/dts/mediatek/Makefile"
 grep -q '^dtb-$(CONFIG_ARCH_MEDIATEK) += mt6768.dtb$' "$mediatek_makefile" ||
 	printf 'dtb-$(CONFIG_ARCH_MEDIATEK) += mt6768.dtb\n' >>"$mediatek_makefile"
@@ -80,6 +89,7 @@ done <"$inputs_out/fire-config-symbols.list" >"$report_out/dropped-fire-symbols.
 	printf 'config out: %s\n' "$config_out"
 	printf 'build script: %s\n' "$worktree/build.sh"
 	printf 'build defconfig: %s\n' "$worktree/arch/arm64/configs/fire_6x_defconfig"
+	printf 'ALPS device_modules slice: %s\n' "$(cat "$base_out/alps-device-modules-slice.log")"
 	printf 'required files: %s\n' "$(wc -l <"$inputs_out/required-files.list")"
 	printf 'dropped fire symbols: %s\n' "$(wc -l <"$report_out/dropped-fire-symbols.list")"
 	printf 'dtb warnings: %s\n' "$(grep -c 'Warning' "$report_out/dtb.log" || true)"
