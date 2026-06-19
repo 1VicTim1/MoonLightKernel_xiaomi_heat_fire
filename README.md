@@ -3,6 +3,7 @@
 > **Base:** MoonLightKernel (`ksu-susfs` branch) | **Device:** Xiaomi Redmi 12 (codename: fire) | **Chipset:** MediaTek MT6768
 
 This document explains every change made to overclock the CPU and apply performance tuning, with copy-pasteable commands so you can replicate it on your own fork.
+(bu branch ksu-susfs basedir yeni kohnedir amma kernelSu ile rooted olunub 
 
 ---
 
