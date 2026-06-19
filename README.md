@@ -10,7 +10,7 @@ This document explains every change made to overclock the CPU and apply performa
 
 | Component | Stock | Overclocked |
 |---|---|---|
-| LITTLE cluster (A55, 6 cores) | 1700 MHz | **1900 MHz** |
+| LITTLE cluster (A55, 6 cores) | 1800 MHz | **1900 MHz** |
 | BIG cluster (A75, 2 cores) | 2000 MHz | **2100 MHz** |
 | Default governor | schedutil | **performance** |
 | TCP congestion control | westwood+ | **bbr** |
