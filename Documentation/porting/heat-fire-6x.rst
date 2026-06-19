@@ -123,10 +123,18 @@ Current checkpoint against ``android15-6.6``:
 * ``fire_6x_porting.fragment`` merges and ``olddefconfig`` completes.
 * ``mediatek/mt6768.dtb`` builds with no DTC warnings.
 * ``mediatek/fire.dtbo`` builds with no DTC warnings.
-* 175 fire config symbols are dropped because Android common
+* 165 fire config symbols are dropped because Android common
   6.6 does not contain the MTK vendor Kconfig/driver stack.
 * ``mediatek/heat.dtbo`` is not part of the passing checkpoint yet; the archived
   heat DTS includes ``<heat/cust.dtsi>``, which is not present in this tree.
+* The legacy PMIC/sub-PMIC symbols have been mapped to Android common 6.6
+  upstream drivers where available.  ``CONFIG_ARCH_MEDIATEK`` now exposes
+  ``CONFIG_MTK_PMIC_WRAP``, and the first 6.6 fire config enables the upstream
+  MT6397/MT6370 MFD, MT6358/MT6370 regulator, MT6370 charger, ADC, Type-C,
+  backlight and LED drivers.
+* ``include/dt-bindings/pinctrl/mt65xx.h`` carries the 6.x
+  ``MTK_PULL_SET_RSEL_*`` constants required by upstream MediaTek pinctrl once
+  ``CONFIG_ARCH_MEDIATEK`` is enabled.
 
 Materialized 6.6 Workspace
 --------------------------
@@ -153,21 +161,26 @@ configuration.  A focused fire smoke build can then be run with:
     TOOLCHAIN_DIR=$HOME/.cache/android-kernel-toolchains/clang-r530567 \
     OUT_DIR=$PWD/out/porting-6.6/config-fire-port \
     BUILD_TARGETS='Image mediatek/mt6768.dtb mediatek/fire.dtbo' \
-    out/porting-6.6/android15-6.6-port-tree/build.sh fire_6x --manual --no-ccache
+    out/porting-6.6/android15-6.6-port-tree/build.sh fire_6x --manual
 
 ``BUILD_TARGETS`` is intentionally narrower than a full arm64 build so Android
 common does not try to compile unrelated vendor DTBs while the fire port is
 still being staged.  The current smoke checkpoint produces:
 
 * ``out/porting-6.6/config-fire-port/arch/arm64/boot/Image``
+* ``out/porting-6.6/config-fire-port/vmlinux``
 * ``out/porting-6.6/config-fire-port/arch/arm64/boot/dts/mediatek/mt6768.dtb``
 * ``out/porting-6.6/config-fire-port/arch/arm64/boot/dts/mediatek/fire.dtbo``
 * ``out/porting-6.6/config-fire-port/arch/arm64/boot/dtbo.img``
 
-The next source porting target is the missing MTK vendor stack represented by
-the dropped fire config symbols.  Start with the lowest boot-critical layers:
-``CONFIG_MACH_MT6768``, pinctrl/GPIO, PMIC/charger, MMC/storage, USB/Type-C,
-and display/backlight.
+The smoke build also compiles the upstream 6.6 MTK platform layer, including
+MediaTek pinctrl, PMIC wrapper, CMDQ mailbox, watchdog, MT6370/MT6397 MFD,
+MT6358/MT6370 regulators, MT6370 charger, MT6370 Type-C TCPM, MT6370 ADC,
+MT6370 backlight and MT6370 LED drivers.  The next source porting target is
+the missing MTK vendor stack represented by the remaining dropped fire config
+symbols.  Start with the lowest boot-critical layers: ``CONFIG_MACH_MT6768``,
+MMC/storage, the remaining USB/Type-C companion controllers, display/panel and
+modem/sensor support.
 
 To map dropped symbols back to the current 4.19 Kconfig owners, run:
 
