@@ -59,7 +59,7 @@ Toolchain и зависимости:
   --list-cver            Показать доступные в AOSP ревизии Android clang
   --list-installed-cver  Показать установленные локально ревизии Android clang
   --detect-cver          Предложить подходящую ревизию clang для текущего дерева
-  -m, --manual           Отключить автоматические проверки, загрузки, ccache и AnyKernel ZIP
+  -m, --manual           Отключить автоматические проверки, загрузки и AnyKernel ZIP
   --no-ccache            Собирать без ccache
   -j, --jobs N           Задать число параллельных задач
 
@@ -99,7 +99,7 @@ Toolchain and dependencies:
   --list-cver            List Android clang revisions available from AOSP
   --list-installed-cver  List locally installed Android clang revisions
   --detect-cver          Print the likely clang revision for this kernel tree
-  -m, --manual           Disable implicit checks, clang download, ccache and AnyKernel ZIP
+  -m, --manual           Disable implicit checks, clang download and AnyKernel ZIP
   --no-ccache            Build without ccache
   -j, --jobs N           Set parallel build jobs
 
@@ -350,7 +350,6 @@ while (($#)); do
 			;;
 		-m|--manual)
 			MANUAL=1
-			USE_CCACHE=0
 			;;
 		--no-ccache)
 			USE_CCACHE=0
@@ -377,7 +376,7 @@ while (($#)); do
 					t) PREBUILT_TGZ=1 ;;
 					a) ANYKERNEL_ZIP=1 ;;
 					A) AUTO=1 ;;
-					m) MANUAL=1; USE_CCACHE=0 ;;
+					m) MANUAL=1 ;;
 					c) CHECK=1 ;;
 					h) usage; exit 0 ;;
 				esac
