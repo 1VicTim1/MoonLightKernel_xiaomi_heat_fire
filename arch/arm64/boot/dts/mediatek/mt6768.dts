@@ -2429,7 +2429,7 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 	};
 
 	mmc0: mmc@11230000 {
-		compatible = "mediatek,mt6768-mmc";
+		compatible = "mediatek,mt6768-mmc", "mediatek,mt6779-mmc";
 		reg = <0 0x11230000 0 0x10000>,
 			<0 0x11cd0000 0 0x1000>;
 		interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_LOW>;
@@ -2443,7 +2443,7 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 	};
 
 	mmc1: mmc@11240000 {
-		compatible = "mediatek,mt6768-mmc";
+		compatible = "mediatek,mt6768-mmc", "mediatek,mt6779-mmc";
 		reg = <0 0x11240000 0 0x10000>,
 			<0 0x11c90000 0 0x1000>;
 		interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_LOW>;

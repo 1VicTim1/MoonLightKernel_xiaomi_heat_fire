@@ -140,6 +140,14 @@ Current checkpoint against ``android15-6.6``:
   Type-C path remains covered by ``CONFIG_TYPEC_TCPCI_MT6370``.
 * ``CONFIG_TCPC_HUSB320`` still has no matching Android common 6.6 driver in
   this base and remains a real vendor Type-C controller gap.
+* The first AK3 boot test reaches Android first-stage init.  The captured
+  ``console-ramoops`` ends with init waiting for missing block-device uevents:
+  ``boot_b``, ``md_udc``, ``super``, ``vbmeta_b``, ``vbmeta_system_b`` and
+  ``vbmeta_vendor_b``.
+* The storage follow-up enables upstream ``CONFIG_MMC_MTK``/``CONFIG_MMC_CQHCI``
+  and gives the MT6768 eMMC/SD nodes an upstream ``mediatek,mt6779-mmc``
+  fallback compatible so Android common 6.6 can probe them before a full vendor
+  MSDC port is attempted.
 * ``include/dt-bindings/pinctrl/mt65xx.h`` carries the 6.x
   ``MTK_PULL_SET_RSEL_*`` constants required by upstream MediaTek pinctrl once
   ``CONFIG_ARCH_MEDIATEK`` is enabled.
@@ -187,11 +195,11 @@ The smoke build also compiles the upstream 6.6 MTK platform layer, including
 MediaTek pinctrl, PMIC wrapper, CMDQ mailbox, watchdog, MT6370/MT6397 MFD,
 MT6358/MT6370 regulators, MT6370 charger, MT6370 Type-C TCPM, MT6370 ADC,
 MT6370 backlight, MT6370 LED, MTK T-PHY, MTU3 USB DRD, XHCI-MTK,
-RT1711H Type-C and WUSB3801 Type-C drivers.  The next source porting target is
-the missing MTK vendor stack represented by the remaining dropped fire config
-symbols.  Start with the lowest boot-critical layers: ``CONFIG_MACH_MT6768``,
-MMC/storage, the remaining USB/Type-C companion controllers, display/panel and
-modem/sensor support.
+RT1711H Type-C, WUSB3801 Type-C and upstream MTK MMC/CQHCI drivers.  The next
+source porting target is the missing MTK vendor stack represented by the
+remaining dropped fire config symbols.  Start with the lowest boot-critical
+layers: ``CONFIG_MACH_MT6768``, any remaining MMC/storage probe fallout,
+display/panel, modem/connectivity and sensor support.
 
 To map dropped symbols back to the current 4.19 Kconfig owners, run:
 
