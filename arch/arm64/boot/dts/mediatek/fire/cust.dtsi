@@ -450,6 +450,7 @@
 
 &md1_sim1_hot_plug_eint {
 	compatible = "mediatek,md1_sim1_hot_plug_eint-eint";
+	interrupt-parent = <&pio>;
 	interrupts = <0 8>;
 	debounce = <0 10000>;
 	dedicated = <0 0>;
@@ -547,5 +548,4 @@
 	mediatek,kpd-hw-factory-key = <17>;
 	status = "okay";
 };
-
 

@@ -567,8 +567,8 @@ static long ion_sys_cache_sync(struct ion_client *client,
 		m4u_mva_unmap_kernel((unsigned long)param->va,
 				     sync_size, sync_va);
 #else
-		m4u_mva_unmap_kernel((unsigned int)param->va,
-				     (unsigned int)sync_size, sync_va);
+			m4u_mva_unmap_kernel((unsigned int)(unsigned long)param->va,
+					     (unsigned int)sync_size, sync_va);
 #endif
 	} else if (ion_need_unmap_flag) {
 		ion_unmap_kernel(client, kernel_handle);
