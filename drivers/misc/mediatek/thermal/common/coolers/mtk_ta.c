@@ -34,6 +34,7 @@
 #include <linux/socket.h>
 #include <linux/skbuff.h>
 #include <linux/reboot.h>
+#include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 #include <linux/uidgid.h>
 #define MAX_LEN	128
@@ -67,8 +68,8 @@ get_image_sensor_state(void)
  */
 
 static struct sock *daemo_nl_sk;
-static void ta_nl_send_to_user(
-	int pid, int seq, struct tad_nl_msg_t *reply_msg);
+static int ta_nl_send_to_user(
+	u32 portid, int seq, struct tad_nl_msg_t *reply_msg);
 
 static int g_tad_pid;
 static bool init_flag;
@@ -78,6 +79,11 @@ struct DCTM_T thermal_dctm_t;
 static struct tad_nl_msg_t tad_ret_msg;
 static unsigned int g_ta_status;
 static int g_ta_counter;
+static DEFINE_SPINLOCK(g_ta_notify_lock);
+static bool g_ta_notify_outstanding;
+static bool g_ta_notify_dirty;
+static bool g_ta_request_active;
+static int g_ta_pending_flow_state;
 /*=============================================================
  *Local function prototype
  *=============================================================
@@ -192,8 +198,15 @@ void atm_ctrl_cmd_from_user(void *nl_data, struct tad_nl_msg_t *ret_msg)
 
 	case TA_DAEMON_CMD_SET_DAEMON_PID:
 		{
+			unsigned long flags;
+
 			memcpy(&g_tad_pid, &msg->tad_data[0],
 						sizeof(g_tad_pid));
+			spin_lock_irqsave(&g_ta_notify_lock, flags);
+			g_ta_notify_outstanding = false;
+			g_ta_notify_dirty = false;
+			g_ta_request_active = false;
+			spin_unlock_irqrestore(&g_ta_notify_lock, flags);
 
 			tsta_dprintk(
 				"[%s] g_tad_pid = %d\n", __func__,
@@ -286,7 +299,8 @@ int ta_get_ttj(void)
 	return g_tad_ttj;
 }
 
-static void ta_nl_send_to_user(int pid, int seq, struct tad_nl_msg_t *reply_msg)
+static int ta_nl_send_to_user(u32 portid, int seq,
+	struct tad_nl_msg_t *reply_msg)
 {
 	struct sk_buff *skb;
 	struct nlmsghdr *nlh;
@@ -299,35 +313,83 @@ static void ta_nl_send_to_user(int pid, int seq, struct tad_nl_msg_t *reply_msg)
 	skb = alloc_skb(len, GFP_ATOMIC);
 	if (!skb) {
 		g_ta_status = g_ta_status | 0x00010000;
-		return;
+		return -ENOMEM;
 	}
-	nlh = nlmsg_put(skb, pid, seq, 0, size, 0);
+	nlh = nlmsg_put(skb, 0, seq, 0, size, 0);
 	data = NLMSG_DATA(nlh);
 	memcpy(data, reply_msg, size);
 	NETLINK_CB(skb).portid = 0; /* from kernel */
 	NETLINK_CB(skb).dst_group = 0; /* unicast */
 
 	tsta_dprintk(
-	"[%s] netlink_unicast size=%d tad_cmd=%d pid=%d\n", __func__,
-		size, reply_msg->tad_cmd, pid);
+	"[%s] netlink_unicast size=%d tad_cmd=%d portid=%u\n", __func__,
+		size, reply_msg->tad_cmd, portid);
 
 
-	ret = netlink_unicast(daemo_nl_sk, skb, pid, MSG_DONTWAIT);
+	ret = netlink_unicast(daemo_nl_sk, skb, portid, MSG_DONTWAIT);
 	if (ret < 0) {
 		g_ta_status = g_ta_status | 0x00000010;
 		pr_notice("[%s] send failed %d\n", __func__, ret);
-		return;
+		return ret;
 	}
 
 
 	tsta_dprintk("[%s] netlink_unicast- ret=%d\n", __func__, ret);
 
+	return 0;
+}
+
+static int ta_nl_send_notify(int flow_state)
+{
+	struct tad_nl_msg_t *tad_msg;
+	int ret;
+	int size = TAD_NL_MSG_T_HDR_LEN + sizeof(flow_state);
+
+	tad_msg = kmalloc(size, GFP_KERNEL);
+	if (!tad_msg) {
+		g_ta_status = g_ta_status | 0x00100000;
+		return -ENOMEM;
+	}
+
+	memset(tad_msg, 0, size);
+	tad_msg->tad_cmd = TA_DAEMON_CMD_NOTIFY_DAEMON;
+	memcpy(tad_msg->tad_data, &flow_state, sizeof(flow_state));
+	tad_msg->tad_data_len = sizeof(flow_state);
+	ret = ta_nl_send_to_user(g_tad_pid, 0, tad_msg);
+	kfree(tad_msg);
+
+	return ret;
+}
+
+static void ta_nl_finish_request(bool finish_cycle)
+{
+	unsigned long flags;
+	bool send_notify = false;
+	int flow_state = 0;
+
+	spin_lock_irqsave(&g_ta_notify_lock, flags);
+	g_ta_request_active = false;
+	if (finish_cycle)
+		g_ta_notify_outstanding = false;
+	if (!g_ta_notify_outstanding && g_ta_notify_dirty && g_tad_pid != 0) {
+		g_ta_notify_dirty = false;
+		g_ta_notify_outstanding = true;
+		flow_state = g_ta_pending_flow_state;
+		send_notify = true;
+	}
+	spin_unlock_irqrestore(&g_ta_notify_lock, flags);
+
+	if (send_notify && ta_nl_send_notify(flow_state) < 0) {
+		spin_lock_irqsave(&g_ta_notify_lock, flags);
+		g_ta_notify_outstanding = false;
+		spin_unlock_irqrestore(&g_ta_notify_lock, flags);
+	}
 }
 
 
 static void ta_nl_data_handler(struct sk_buff *skb)
 {
-	u32 pid;
+	u32 portid;
 	kuid_t uid;
 	int seq;
 	void *data;
@@ -336,7 +398,7 @@ static void ta_nl_data_handler(struct sk_buff *skb)
 	int size = 0;
 
 	nlh = (struct nlmsghdr *)skb->data;
-	pid = NETLINK_CREDS(skb)->pid;
+	portid = NETLINK_CB(skb).portid;
 	uid = NETLINK_CREDS(skb)->uid;
 	seq = nlh->nlmsg_seq;
 
@@ -356,10 +418,15 @@ static void ta_nl_data_handler(struct sk_buff *skb)
 
 	size = tad_msg->tad_ret_data_len + TAD_NL_MSG_T_HDR_LEN;
 
+	spin_lock_bh(&g_ta_notify_lock);
+	g_ta_request_active = true;
+	spin_unlock_bh(&g_ta_notify_lock);
+
 	memset(&tad_ret_msg, 0, size);
 
 	atm_ctrl_cmd_from_user(data, &tad_ret_msg);
-	ta_nl_send_to_user(pid, seq, &tad_ret_msg);
+	ta_nl_send_to_user(portid, seq, &tad_ret_msg);
+	ta_nl_finish_request(tad_msg->tad_cmd == TA_DAEMON_CMD_SET_TTJ);
 	tsta_dprintk("[%s] send to user space process done\n", __func__);
 
 
@@ -368,6 +435,10 @@ static void ta_nl_data_handler(struct sk_buff *skb)
 
 int wakeup_ta_algo(int flow_state)
 {
+	unsigned long flags;
+	bool send_notify = false;
+	int ret;
+
 	tsta_dprintk("[%s]g_tad_pid=%d, state=%d\n", __func__, g_tad_pid,
 								flow_state);
 
@@ -379,23 +450,27 @@ int wakeup_ta_algo(int flow_state)
 	}
 	g_ta_counter++;
 	if (g_tad_pid != 0) {
-		struct tad_nl_msg_t *tad_msg = NULL;
-		int size = TAD_NL_MSG_T_HDR_LEN + sizeof(flow_state);
-
-		/*tad_msg = (struct tad_nl_msg_t *)vmalloc(size);*/
-		tad_msg = kmalloc(size, GFP_KERNEL);
-
-		if (tad_msg == NULL) {
-			g_ta_status = g_ta_status | 0x00100000;
-			return -ENOMEM;
+		spin_lock_irqsave(&g_ta_notify_lock, flags);
+		g_ta_pending_flow_state = flow_state;
+		if (g_ta_notify_outstanding || g_ta_request_active) {
+			g_ta_notify_dirty = true;
+		} else {
+			g_ta_notify_outstanding = true;
+			g_ta_notify_dirty = false;
+			send_notify = true;
 		}
-		tsta_dprintk("[%s] malloc size=%d\n", __func__, size);
-		memset(tad_msg, 0, size);
-		tad_msg->tad_cmd = TA_DAEMON_CMD_NOTIFY_DAEMON;
-		memcpy(tad_msg->tad_data, &flow_state, sizeof(flow_state));
-		tad_msg->tad_data_len += sizeof(flow_state);
-		ta_nl_send_to_user(g_tad_pid, 0, tad_msg);
-		kfree(tad_msg);
+		spin_unlock_irqrestore(&g_ta_notify_lock, flags);
+
+		if (!send_notify)
+			return 0;
+
+		ret = ta_nl_send_notify(flow_state);
+		if (ret < 0) {
+			spin_lock_irqsave(&g_ta_notify_lock, flags);
+			g_ta_notify_outstanding = false;
+			spin_unlock_irqrestore(&g_ta_notify_lock, flags);
+			return ret;
+		}
 		return 0;
 	}
 	tsta_warn("[%s] error,g_tad_pid=0\n", __func__);
@@ -559,4 +634,3 @@ static int __init ta_init(void)
 
 
 module_init(ta_init);
-
