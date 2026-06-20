@@ -8,6 +8,7 @@
 #include <linux/nsproxy.h>
 #include <linux/path.h>
 #include <linux/printk.h>
+#include <linux/susfs.h>
 #include <linux/types.h>
 #ifndef KSU_HAS_PATH_UMOUNT
 #include <linux/syscalls.h>
@@ -23,6 +24,10 @@
 #include "compat/kernel_compat.h"
 
 static bool ksu_kernel_umount_enabled = true;
+
+#ifdef CONFIG_KSU_SUSFS
+extern bool susfs_is_mnt_devname_ksu(struct path *path);
+#endif
 
 static int kernel_umount_feature_get(u64 *value)
 {
@@ -79,7 +84,7 @@ static void ksu_sys_umount(const char *mnt, int flags)
 
 #endif
 
-static void try_umount(const char *mnt, int flags)
+void ksu_try_umount(const char *mnt, bool check_mnt, int flags, uid_t uid)
 {
 	struct path path;
 	int err = kern_path(mnt, 0, &path);
@@ -92,7 +97,25 @@ static void try_umount(const char *mnt, int flags)
 		path_put(&path);
 		return;
 	}
-    ksu_umount_mnt(mnt, &path, flags);
+
+#ifdef CONFIG_KSU_SUSFS
+	if (check_mnt && !susfs_is_mnt_devname_ksu(&path)) {
+		path_put(&path);
+		return;
+	}
+
+#ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
+	if (susfs_is_log_enabled)
+		pr_info("susfs: umounting '%s' for uid: %d\n", mnt, uid);
+#endif
+#endif
+
+	ksu_umount_mnt(mnt, &path, flags);
+}
+
+static void try_umount(const char *mnt, int flags)
+{
+	ksu_try_umount(mnt, false, flags, 0);
 }
 
 struct umount_tw {
@@ -116,6 +139,27 @@ static void umount_tw_func(struct callback_head *cb)
 
 	kfree(tw);
 }
+
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+void susfs_try_umount_all(uid_t uid)
+{
+	const struct cred *saved;
+	struct mount_entry *entry;
+
+	if (!ksu_kernel_umount_enabled || !ksu_cred)
+		return;
+
+	saved = override_creds(ksu_cred);
+
+	susfs_try_umount(uid);
+	down_read(&mount_list_lock);
+	list_for_each_entry(entry, &mount_list, list)
+		try_umount(entry->umountable, entry->flags);
+	up_read(&mount_list_lock);
+
+	revert_creds(saved);
+}
+#endif
 
 int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
 {
@@ -148,6 +192,10 @@ int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
 	if (!ksu_uid_should_umount(new_uid) && !is_isolated_process(new_uid)) {
 		return 0;
 	}
+
+#ifdef CONFIG_KSU_SUSFS
+	current->susfs_task_state |= TASK_STRUCT_NON_ROOT_USER_APP_PROC;
+#endif
 
 	// check old process's selinux context, if it is not zygote, ignore it!
 	// because some su apps may setuid to untrusted_app but they are in global mount namespace

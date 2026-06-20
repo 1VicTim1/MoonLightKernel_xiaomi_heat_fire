@@ -2,6 +2,7 @@
 #include <linux/cred.h>
 #include <linux/slab.h>
 #include <linux/string.h>
+#include <linux/susfs.h>
 #include <linux/uaccess.h>
 #include <linux/version.h>
 
@@ -738,6 +739,174 @@ out:
 	return err;
 }
 
+#ifdef CONFIG_KSU_SUSFS
+static int do_susfs_show_version(void __user *arg)
+{
+	size_t len = strlen(SUSFS_VERSION) + 1;
+
+	return copy_to_user(arg, SUSFS_VERSION, len) ? -EFAULT : 0;
+}
+
+static int do_susfs_show_variant(void __user *arg)
+{
+	size_t len = strlen(SUSFS_VARIANT) + 1;
+
+	return copy_to_user(arg, SUSFS_VARIANT, len) ? -EFAULT : 0;
+}
+
+static int do_susfs_show_enabled_features(void __user *arg)
+{
+	u64 enabled_features = 0;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	enabled_features |= (1 << 0);
+#endif
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+	enabled_features |= (1 << 1);
+#endif
+#ifdef CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
+	enabled_features |= (1 << 2);
+#endif
+#ifdef CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+	enabled_features |= (1 << 3);
+#endif
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+	enabled_features |= (1 << 4);
+#endif
+#ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
+	enabled_features |= (1 << 5);
+#endif
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+	enabled_features |= (1 << 6);
+#endif
+#ifdef CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
+	enabled_features |= (1 << 7);
+#endif
+#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
+	enabled_features |= (1 << 8);
+#endif
+#ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
+	enabled_features |= (1 << 9);
+#endif
+#ifdef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+	enabled_features |= (1 << 10);
+#endif
+#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+	enabled_features |= (1 << 11);
+#endif
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+	enabled_features |= (1 << 12);
+#endif
+#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
+	enabled_features |= (1 << 14);
+#endif
+
+	return copy_to_user(arg, &enabled_features, sizeof(enabled_features)) ?
+		       -EFAULT :
+		       0;
+}
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+static int do_susfs_add_sus_path(void __user *arg)
+{
+	return susfs_add_sus_path(arg);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+static int do_susfs_add_sus_mount(void __user *arg)
+{
+	return susfs_add_sus_mount(arg);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+static int do_susfs_add_sus_kstat(void __user *arg)
+{
+	return susfs_add_sus_kstat(arg);
+}
+
+static int do_susfs_update_sus_kstat(void __user *arg)
+{
+	return susfs_update_sus_kstat(arg);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+static int do_susfs_add_try_umount(void __user *arg)
+{
+	return susfs_add_try_umount(arg);
+}
+
+extern void susfs_run_try_umount_for_current_mnt_ns(void);
+static int do_susfs_run_umount_for_current_mnt_ns(void __user *arg)
+{
+	susfs_run_try_umount_for_current_mnt_ns();
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
+static int do_susfs_set_uname(void __user *arg)
+{
+	return susfs_set_uname(arg);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
+static int do_susfs_enable_log(void __user *arg)
+{
+	unsigned long value = (unsigned long)arg;
+
+	if (value > 1) {
+		bool enabled;
+
+		if (copy_from_user(&enabled, arg, sizeof(enabled)))
+			return -EFAULT;
+		value = enabled ? 1 : 0;
+	}
+
+	susfs_set_log(value != 0);
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+static int do_susfs_set_cmdline_or_bootconfig(void __user *arg)
+{
+	return susfs_set_cmdline_or_bootconfig(arg);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+static int do_susfs_add_open_redirect(void __user *arg)
+{
+	return susfs_add_open_redirect(arg);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SUS_SU
+static int do_susfs_show_sus_su_working_mode(void __user *arg)
+{
+	int mode = susfs_get_sus_su_working_mode();
+
+	return copy_to_user(arg, &mode, sizeof(mode)) ? -EFAULT : 0;
+}
+
+static int do_susfs_sus_su(void __user *arg)
+{
+	return susfs_sus_su(arg);
+}
+
+static int do_susfs_is_sus_su_ready(void __user *arg)
+{
+	int ready = 1;
+
+	return copy_to_user(arg, &ready, sizeof(ready)) ? -EFAULT : 0;
+}
+#endif
+#endif
+
 // IOCTL handlers mapping table
 // clang-format off
 static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
@@ -879,6 +1048,128 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
         .handler = do_get_version_tag,
         .perm_check = manager_or_root
     },
+#ifdef CONFIG_KSU_SUSFS
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+    {
+        .cmd = CMD_SUSFS_ADD_SUS_PATH,
+        .name = "SUSFS_ADD_SUS_PATH",
+        .handler = do_susfs_add_sus_path,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+    {
+        .cmd = CMD_SUSFS_ADD_SUS_MOUNT,
+        .name = "SUSFS_ADD_SUS_MOUNT",
+        .handler = do_susfs_add_sus_mount,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+    {
+        .cmd = CMD_SUSFS_ADD_SUS_KSTAT,
+        .name = "SUSFS_ADD_SUS_KSTAT",
+        .handler = do_susfs_add_sus_kstat,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_UPDATE_SUS_KSTAT,
+        .name = "SUSFS_UPDATE_SUS_KSTAT",
+        .handler = do_susfs_update_sus_kstat,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_ADD_SUS_KSTAT_STATICALLY,
+        .name = "SUSFS_ADD_SUS_KSTAT_STATICALLY",
+        .handler = do_susfs_add_sus_kstat,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+    {
+        .cmd = CMD_SUSFS_ADD_TRY_UMOUNT,
+        .name = "SUSFS_ADD_TRY_UMOUNT",
+        .handler = do_susfs_add_try_umount,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_RUN_UMOUNT_FOR_CURRENT_MNT_NS,
+        .name = "SUSFS_RUN_UMOUNT_FOR_CURRENT_MNT_NS",
+        .handler = do_susfs_run_umount_for_current_mnt_ns,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
+    {
+        .cmd = CMD_SUSFS_SET_UNAME,
+        .name = "SUSFS_SET_UNAME",
+        .handler = do_susfs_set_uname,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
+    {
+        .cmd = CMD_SUSFS_ENABLE_LOG,
+        .name = "SUSFS_ENABLE_LOG",
+        .handler = do_susfs_enable_log,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+    {
+        .cmd = CMD_SUSFS_SET_CMDLINE_OR_BOOTCONFIG,
+        .name = "SUSFS_SET_CMDLINE_OR_BOOTCONFIG",
+        .handler = do_susfs_set_cmdline_or_bootconfig,
+        .perm_check = manager_or_root
+    },
+#endif
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+    {
+        .cmd = CMD_SUSFS_ADD_OPEN_REDIRECT,
+        .name = "SUSFS_ADD_OPEN_REDIRECT",
+        .handler = do_susfs_add_open_redirect,
+        .perm_check = manager_or_root
+    },
+#endif
+    {
+        .cmd = CMD_SUSFS_SHOW_VERSION,
+        .name = "SUSFS_SHOW_VERSION",
+        .handler = do_susfs_show_version,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_SHOW_ENABLED_FEATURES,
+        .name = "SUSFS_SHOW_ENABLED_FEATURES",
+        .handler = do_susfs_show_enabled_features,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_SHOW_VARIANT,
+        .name = "SUSFS_SHOW_VARIANT",
+        .handler = do_susfs_show_variant,
+        .perm_check = manager_or_root
+    },
+#ifdef CONFIG_KSU_SUSFS_SUS_SU
+    {
+        .cmd = CMD_SUSFS_SHOW_SUS_SU_WORKING_MODE,
+        .name = "SUSFS_SHOW_SUS_SU_WORKING_MODE",
+        .handler = do_susfs_show_sus_su_working_mode,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_IS_SUS_SU_READY,
+        .name = "SUSFS_IS_SUS_SU_READY",
+        .handler = do_susfs_is_sus_su_ready,
+        .perm_check = manager_or_root
+    },
+    {
+        .cmd = CMD_SUSFS_SUS_SU,
+        .name = "SUSFS_SUS_SU",
+        .handler = do_susfs_sus_su,
+        .perm_check = manager_or_root
+    },
+#endif
+#endif
     {
         .cmd = 0,
         .name = NULL,

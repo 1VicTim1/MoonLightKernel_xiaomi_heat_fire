@@ -4,6 +4,7 @@
 #include <linux/module.h>
 #include <linux/rcupdate.h>
 #include <linux/sched.h>
+#include <linux/susfs.h>
 #include <linux/workqueue.h>
 
 #include "policy/allowlist.h"
@@ -100,6 +101,9 @@ int __init kernelsu_init(void)
 
 	ksu_supercalls_init();
 
+#ifdef CONFIG_KSU_SUSFS
+	susfs_init();
+#endif
 
 
 	if (ksu_late_loaded) {
