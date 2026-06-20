@@ -126,7 +126,7 @@ static struct {
 	{DISP_OPT_SHADOW_MODE, 0, "DISP_OPT_SHADOW_MODE"},
 	{DISP_OPT_OVL_EXT_LAYER, 0, "DISP_OPT_OVL_EXT_LAYER"},
 	{DISP_OPT_REG_PARSER_RAW_DUMP, 0, "DISP_OPT_REG_PARSER_RAW_DUMP"},
-	{DISP_OPT_AOD, 0, "DISP_OPT_AOD"},
+	{DISP_OPT_AOD, 1, "DISP_OPT_AOD"},
 	{DISP_OPT_ARR_PHASE_1, 0, "DISP_OPT_ARR_PHASE_1"},
 	{DISP_OPT_RSZ, 0, "DISP_OPT_RSZ"},
 	{DISP_OPT_RPO, 0, "DISP_OPT_RPO"},
@@ -403,7 +403,7 @@ void disp_helper_option_init(void)
 
 	disp_helper_set_option(DISP_OPT_REG_PARSER_RAW_DUMP, 1);
 
-	disp_helper_set_option(DISP_OPT_AOD, 0);
+	disp_helper_set_option(DISP_OPT_AOD, 1);
 
 	/* ARR phase 1 option*/
 	disp_helper_set_option(DISP_OPT_ARR_PHASE_1, 0);
