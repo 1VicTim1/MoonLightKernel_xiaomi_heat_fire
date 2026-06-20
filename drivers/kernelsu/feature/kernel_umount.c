@@ -3,6 +3,7 @@
 #include <linux/task_work.h>
 #include <linux/cred.h>
 #include <linux/fs.h>
+#include <linux/kernel.h>
 #include <linux/mount.h>
 #include <linux/namei.h>
 #include <linux/nsproxy.h>
@@ -27,6 +28,25 @@ static bool ksu_kernel_umount_enabled = true;
 
 #ifdef CONFIG_KSU_SUSFS
 extern bool susfs_is_mnt_devname_ksu(struct path *path);
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+struct susfs_default_umount {
+	const char *path;
+	bool check_mnt;
+	int flags;
+};
+
+static const struct susfs_default_umount susfs_default_umounts[] = {
+	{ "/system", true, 0 },
+	{ "/system_ext", true, 0 },
+	{ "/vendor", true, 0 },
+	{ "/product", true, 0 },
+	{ "/odm", true, 0 },
+	{ "/oem", true, 0 },
+	{ "/data/adb/modules", false, MNT_DETACH },
+	{ "/debug_ramdisk", false, MNT_DETACH },
+};
 #endif
 
 static int kernel_umount_feature_get(u64 *value)
@@ -141,6 +161,17 @@ static void umount_tw_func(struct callback_head *cb)
 }
 
 #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+static void susfs_try_default_umounts(uid_t uid)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(susfs_default_umounts); i++) {
+		ksu_try_umount(susfs_default_umounts[i].path,
+			       susfs_default_umounts[i].check_mnt,
+			       susfs_default_umounts[i].flags, uid);
+	}
+}
+
 void susfs_try_umount_all(uid_t uid)
 {
 	const struct cred *saved;
@@ -152,6 +183,8 @@ void susfs_try_umount_all(uid_t uid)
 	saved = override_creds(ksu_cred);
 
 	susfs_try_umount(uid);
+	susfs_try_default_umounts(uid);
+
 	down_read(&mount_list_lock);
 	list_for_each_entry(entry, &mount_list, list)
 		try_umount(entry->umountable, entry->flags);
