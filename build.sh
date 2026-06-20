@@ -733,6 +733,7 @@ prepare_anykernel() {
 	update_binary="$package_dir/META-INF/com/google/android/update-binary"
 	if [[ -f "$update_binary" ]]; then
 		perl -0pi -e 's/(restore_env\(\) \{\n(?:.*\n)*?  sleep 1;\n)  umount_all;/$1  [ "\$(file_getprop anykernel.sh do.unmount 2>\/dev\/null)" == 1 ] \&\& umount_all;/s' "$update_binary"
+		perl -0pi -e 's/\nsetup_env;\n/\nif [ "\$(file_getprop anykernel.sh do.systemmount 2>\/dev\/null)" != 0 ]; then\n  setup_env;\n  AK3_SYSTEMMOUNT=1;\nfi;\n/s; s/\nrestore_env;\n/\n[ "\$AK3_SYSTEMMOUNT" == 1 ] \&\& restore_env;\n/g' "$update_binary"
 	fi
 	rm -rf "$package_dir/.github" "$package_dir/README.md"
 	cp "$image" "$package_dir/$(basename "$image")"
@@ -749,6 +750,7 @@ kernel.string=Kernel ${DEVICE}
 do.devicecheck=1
 do.modules=0
 do.systemless=1
+do.systemmount=0
 do.cleanup=0
 do.cleanuponabort=0
 do.unmount=0
@@ -763,7 +765,7 @@ set_perm_recursive 0 0 750 750 \$RAMDISK/init* \$RAMDISK/sbin;
 }
 
 BLOCK=boot;
-IS_SLOT_DEVICE=auto;
+IS_SLOT_DEVICE=1;
 RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=auto;
 
