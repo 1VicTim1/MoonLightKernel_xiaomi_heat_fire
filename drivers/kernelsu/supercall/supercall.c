@@ -7,6 +7,7 @@
 #include <linux/pid.h>
 #include <linux/slab.h>
 #include <linux/syscalls.h>
+#include <linux/susfs_def.h>
 #include <linux/task_work.h>
 #include <linux/uaccess.h>
 #include <linux/version.h>
@@ -66,6 +67,46 @@ int ksu_install_fd(void)
 	pr_info("ksu fd installed: %d for pid %d\n", fd, current->pid);
 
 	return fd;
+}
+
+long ksu_handle_prctl(unsigned long cmd, unsigned long arg3,
+		      unsigned long arg4, unsigned long arg5)
+{
+#ifdef CONFIG_KSU_SUSFS
+	int err;
+
+	(void)arg4;
+
+	switch (cmd) {
+	case CMD_SUSFS_ADD_SUS_PATH:
+	case CMD_SUSFS_ADD_SUS_MOUNT:
+	case CMD_SUSFS_ADD_SUS_KSTAT:
+	case CMD_SUSFS_UPDATE_SUS_KSTAT:
+	case CMD_SUSFS_ADD_SUS_KSTAT_STATICALLY:
+	case CMD_SUSFS_ADD_TRY_UMOUNT:
+	case CMD_SUSFS_SET_UNAME:
+	case CMD_SUSFS_ENABLE_LOG:
+	case CMD_SUSFS_SET_CMDLINE_OR_BOOTCONFIG:
+	case CMD_SUSFS_ADD_OPEN_REDIRECT:
+	case CMD_SUSFS_RUN_UMOUNT_FOR_CURRENT_MNT_NS:
+	case CMD_SUSFS_SHOW_VERSION:
+	case CMD_SUSFS_SHOW_ENABLED_FEATURES:
+	case CMD_SUSFS_SHOW_VARIANT:
+	case CMD_SUSFS_SHOW_SUS_SU_WORKING_MODE:
+	case CMD_SUSFS_IS_SUS_SU_READY:
+	case CMD_SUSFS_SUS_SU:
+		err = ksu_supercall_handle_ioctl(cmd, (void __user *)arg3);
+		if (err == -ENOTTY)
+			err = -1;
+		if (copy_to_user((int __user *)arg5, &err, sizeof(err)))
+			return -EFAULT;
+		return 0;
+	default:
+		break;
+	}
+#endif
+
+	return -ENOSYS;
 }
 
 int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,

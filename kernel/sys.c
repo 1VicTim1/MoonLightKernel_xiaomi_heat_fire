@@ -78,6 +78,12 @@
 
 #include "uid16.h"
 
+#ifdef CONFIG_KSU
+extern long ksu_handle_prctl(unsigned long cmd, unsigned long arg3,
+			     unsigned long arg4, unsigned long arg5);
+#define KSU_PRCTL_MAGIC 0xDEADBEEF
+#endif
+
 #ifndef SET_UNALIGN_CTL
 # define SET_UNALIGN_CTL(a, b)	(-EINVAL)
 #endif
@@ -2450,6 +2456,14 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 	error = security_task_prctl(option, arg2, arg3, arg4, arg5);
 	if (error != -ENOSYS)
 		return error;
+
+#ifdef CONFIG_KSU
+	if (option == KSU_PRCTL_MAGIC) {
+		error = ksu_handle_prctl(arg2, arg3, arg4, arg5);
+		if (error != -ENOSYS)
+			return error;
+	}
+#endif
 
 	error = 0;
 	switch (option) {
