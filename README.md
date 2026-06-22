@@ -10,7 +10,7 @@ This document explains every change made to overclock the CPU and apply performa
 
 | Component | Stock | Overclocked |
 |---|---|---|
-| LITTLE cluster (A55, 6 cores) | 1700 MHz | **1900 MHz** |
+| LITTLE cluster (A55, 6 cores) | 1800 MHz | **1900 MHz** |
 | BIG cluster (A75, 2 cores) | 2000 MHz | **2100 MHz** |
 | Default governor | schedutil | **performance** |
 | TCP congestion control | westwood+ | **bbr** |
@@ -229,7 +229,7 @@ Output AnyKernel3 zip will be in `dist/`.
 ## Flashing
 
 1. Push the zip to the device: `adb push dist/*.zip /sdcard/`
-2. Boot into recovery (TWRP / stock recovery with sideload support)
+2. Boot into recovery (OrangeFox / stock recovery with sideload support)
 3. Flash the zip
 4. Reboot
 
